@@ -17,6 +17,8 @@ namespace Mandelbrot
     {
         static string pathCsv = @"..\..\output\mandelbrot.csv";
         static string pathPng = @"..\..\output\mandelbrot.png";
+        static string pathColorPalettes = @"..\..\output\colorPalettes.csv";
+
         static bool showProgress = true;
         static DateTime start;
         static void Main(string[] args)
@@ -34,6 +36,7 @@ namespace Mandelbrot
             decimal posX;
             decimal posY;
             decimal zoom;
+            Color[] colorPalette;
             posX = 0; posY = 0; zoom = (decimal)4.0; //default
 
             Console.WriteLine("***** Welcome to the Mandelbrot Bakery *****");
@@ -46,10 +49,9 @@ namespace Mandelbrot
                 width = Int32.Parse(inputWidth);
             }
             height = width / 16 * 9;
-            Console.Write("Mandelbrot Height (default: " + height + "): ");
+            Console.Write("Mandelbrot Height (default: " + height +"px): ");
             string inputHeight = Console.ReadLine();
-            if (inputHeight == "") { }
-            else { height = Int32.Parse(inputHeight); }
+            if (inputHeight != "") { height = Int32.Parse(inputHeight); }
             Console.WriteLine();
             Console.WriteLine("a) Singlethreaded Mandelbrot CSV");
             Console.WriteLine("b) Singlethreaded Mandelbrot PNG");
@@ -67,15 +69,21 @@ namespace Mandelbrot
                     Console.WriteLine("A fresh {0}x{1} Mandelbrot is being prepared.", width, height);
                     Console.Clear();
                     start = DateTime.Now;
-                    MandelbrotPNGErstellen(width, height);
+                    MandelbrotToPNG(width, height);
                     break;
                 case "c":
                     Console.Clear();
+                    Color[][] allColorPalettes = CsvParser.readColorPalettes(pathColorPalettes);
+                    Color[] inputColorPalette;
                     MandelbrotInThreads myMandelbrot = new MandelbrotInThreads();
                     Console.WriteLine("How many threads (default: 4): ");
                     string inputThreads = Console.ReadLine();
                     if (inputThreads == "") { threads = 4; }
                     else { threads = Int32.Parse(inputThreads); }
+                    Console.WriteLine("Which Color Palette? (0-" + (allColorPalettes.Length-1) + ")(default: 0): ");
+                    string inputColorPaletteId = Console.ReadLine();
+                    if (inputColorPaletteId == "") { inputColorPalette = allColorPalettes[0]; }
+                    else { inputColorPalette = allColorPalettes[Int32.Parse(inputColorPaletteId)]; }
                     Console.WriteLine("a) default Mandelbrot Set");
                     Console.WriteLine("b) an interesting set");
                     Console.WriteLine("c) another interesting set");
@@ -93,12 +101,12 @@ namespace Mandelbrot
                             posX = (decimal)-0.903019109095; posY = (decimal)0.2619000001; zoom = (decimal)0.00000000001;
                             break;
                         case "d":
-                            Console.WriteLine("not yet implemented.");
+                            Console.WriteLine("not yet implemented. Using default...");
                             break;
                     }
                     Console.WriteLine("A fresh {0}x{1} Mandelbrot is being prepared.", width, height);
                     start = DateTime.Now;
-                    myMandelbrot.mandelbrotInThreads(width, height, zoom, posX, posY, threads);
+                    myMandelbrot.mandelbrotInThreads(width, height, zoom, posX, posY, threads, inputColorPalette, pathPng);
 
                     break;
                 default:
@@ -124,7 +132,7 @@ namespace Mandelbrot
                     double xZ = 0.0;
                     double yZ = 0.0;
                     int iteration = 0;
-                    int maxIteration = 100;
+                    int maxIteration = 1000;
                     while (xZ * xZ + yZ * yZ <= 2 * 2 && iteration < maxIteration)
                     {
                         double temp = xZ * xZ - yZ * yZ + x0;
@@ -164,7 +172,7 @@ namespace Mandelbrot
             }
         }
 
-        static void MandelbrotPNGErstellen(int width, int height)
+        static void MandelbrotToPNG(int width, int height)
         {
             Bitmap output = new Bitmap(width, height, PixelFormat.Format16bppRgb555);
 
@@ -186,7 +194,7 @@ namespace Mandelbrot
                     double xZ = 0.0;
                     double yZ = 0.0;
                     int iteration = 0;
-                    int maxIteration = 255;
+                    int maxIteration = 1000;
                     while (xZ * xZ + yZ * yZ <= 2 * 2 && iteration < maxIteration)
                     {
                         double temp = xZ * xZ - yZ * yZ + x0;
@@ -219,10 +227,11 @@ namespace Mandelbrot
             output.Save(pathPng, ImageFormat.Png);
         }
 
+        //only used for single-threaded PNG 
         static Color ColorFromIterations(int iterations, int maxIterations)
         {
             Color output = new Color();
-            int colorIndex = iterations % 254;
+            int colorIndex = iterations % 256;
 
             output = Color.FromArgb(BitmapPalettes.Halftone256.Colors[colorIndex].R, BitmapPalettes.Halftone256.Colors[colorIndex].G, BitmapPalettes.Halftone256.Colors[colorIndex].B);
 

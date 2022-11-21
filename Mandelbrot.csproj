@@ -45,15 +45,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CsvParser.cs" />
     <Compile Include="Mandelbrot.cs" />
     <Compile Include="MandelbrotInThreads.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="output\colorPalettes.csv" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="output\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
